@@ -1,37 +1,66 @@
+# Docker Compose configuration for the CloudAura full-stack application
 
 services:
+
+  # PostgreSQL database service
   db:
     image: postgres:16
     container_name: cloura-db
     restart: unless-stopped
+
+    # Load database settings from the root .env file
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    # Store database data persistently
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+
+  # FastAPI backend service
   backend:
     build:
+      # Build the backend image from the backend Dockerfile
       context: ./app/backend
+
     container_name: cloura-backend
     restart: unless-stopped
+
+    # Connect the backend to the PostgreSQL database
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+    # Expose the FastAPI API on port 8000
     ports:
       - "8000:8000"
+
+    # Start the backend after the database service
     depends_on:
       - db
 
+
+  # Streamlit frontend service
   frontend:
     build:
+      # Build the frontend image from the Streamlit Dockerfile
       context: ./app/streamlit
+
     container_name: cloura-frontend
     restart: unless-stopped
+
+    # Expose the Streamlit application on port 8501
     ports:
       - "8501:8501"
+
+    # Start the frontend after the backend service
     depends_on:
       - backend
 
+
+# Named volume for persistent PostgreSQL data
 volumes:
   postgres_data:
+  
+

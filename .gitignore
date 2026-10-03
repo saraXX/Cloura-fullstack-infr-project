@@ -1,6 +1,13 @@
-. env
-.terraform/.terraform/
+# Environment variables
+.env
+
+# Terraform working directory
+.terraform/
+terraform/.terraform/
+
+# Terraform state files
 terraform/*.tfstate
 terraform/*.tfstate.*
 terraform/terraform.tfvars
+
 

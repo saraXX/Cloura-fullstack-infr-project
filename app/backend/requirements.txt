@@ -1,3 +1,6 @@
+# Backend dependencies
+
 fastapi
 uvicorn
 psycopg2-binary
+
