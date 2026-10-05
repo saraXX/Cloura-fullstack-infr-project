@@ -55,7 +55,7 @@ def health():
 def create_ticket(ticket: Ticket):
     conn = get_connection()
     cur = conn.cursor()
-
+    print("Received ticket:", ticket.name, ticket.issue)
     cur.execute(
         "INSERT INTO tickets (name, issue) VALUES (%s, %s) RETURNING id",
         (ticket.name, ticket.issue)

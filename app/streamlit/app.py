@@ -1,6 +1,10 @@
 import streamlit as st
-import random
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+# Backend API URL inside the Docker Compose network
+BACKEND_URL = "http://backend:8000"
 
 # =========================================================
 # PAGE SETUP
@@ -386,7 +390,33 @@ def go_to_step(number):
     st.session_state.step = number
     st.rerun()
 
+# Send the support ticket to the FastAPI backend
+def create_ticket():
+    ticket_data = {
+        "name": st.session_state.name,
+        "issue": (
+            f"Category: {st.session_state.category}\n"
+            f"Problem: {st.session_state.problem}\n"
+            f"Impact: {st.session_state.impact}\n"
+            f"Description: {st.session_state.description}"
+        )
+    }
 
+    request = Request(
+        f"{BACKEND_URL}/tickets",
+        data=json.dumps(ticket_data).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urlopen(request) as response:
+            if response.status == 200:
+                return json.loads(response.read().decode("utf-8"))
+    except HTTPError:
+        return None
+
+    return None
 # =========================================================
 # HEADER
 # =========================================================
@@ -974,14 +1004,18 @@ elif st.session_state.step == 6:
             type="primary",
             use_container_width=True
         ):
+            try:
+                ticket = create_ticket()
 
-            st.session_state.ticket_number = random.randint(
-                1000,
-                9999
-            )
+                if ticket:
+                    # Use the ticket ID returned by the backend
+                    st.session_state.ticket_number = ticket["ticket_id"]
+                    next_step()
+                else:
+                    st.error("Could not create the ticket.")
 
-            next_step()
-
+            except URLError:
+                st.error("Could not connect to the backend.")
 
 # =========================================================
 # STEP 7
@@ -1038,3 +1072,4 @@ elif st.session_state.step == 7:
         st.session_state.ticket_number = ""
 
         st.rerun()
+        
