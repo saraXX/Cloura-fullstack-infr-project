@@ -1,143 +1,102 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import psycopg2
-import os
 
-# Create the FastAPI application
-app = FastAPI(title="CloudAura IT Support API")
-
-
-# Connect the backend to the PostgreSQL database
-def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+from database import get_connection, create_tables
+from models import Ticket
+from tickets import (
+    create_ticket,
+    get_all_tickets,
+    update_ticket,
+    delete_ticket
+)
 
 
-# Define the data structure for a support ticket
-class Ticket(BaseModel):
-    name: str
-    issue: str
+app = FastAPI(
+    title="CloudAura IT Support API"
+)
 
 
-# Create the tickets table when the application starts
+# =========================================================
+# STARTUP
+# =========================================================
+
 @app.on_event("startup")
-def create_table():
-    conn = get_connection()
-    cur = conn.cursor()
+def startup():
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS tickets (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            issue TEXT NOT NULL,
-            status VARCHAR(50) DEFAULT 'Open'
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    create_tables()
 
 
-# Root endpoint to check that the API is running
+# =========================================================
+# ROOT
+# =========================================================
+
 @app.get("/")
 def root():
-    return {"message": "CloudAura IT Support API is running"}
-
-
-# Health check endpoint
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
-
-
-# Create a new support ticket
-@app.post("/tickets")
-def create_ticket(ticket: Ticket):
-    conn = get_connection()
-    cur = conn.cursor()
-    print("Received ticket:", ticket.name, ticket.issue)
-    cur.execute(
-        "INSERT INTO tickets (name, issue) VALUES (%s, %s) RETURNING id",
-        (ticket.name, ticket.issue)
-    )
-
-    ticket_id = cur.fetchone()[0]
-
-    conn.commit()
-    cur.close()
-    conn.close()
 
     return {
-        "message": "Ticket created successfully",
-        "ticket_id": ticket_id
+        "message": "CloudAura IT Support API is running"
     }
 
 
-# Get all support tickets
-@app.get("/tickets")
-def get_tickets():
-    conn = get_connection()
-    cur = conn.cursor()
+# =========================================================
+# HEALTH
+# =========================================================
 
-    cur.execute(
-        "SELECT id, name, issue, status FROM tickets ORDER BY id DESC"
-    )
+@app.get("/health")
+def health():
 
-    tickets = cur.fetchall()
+    try:
 
-    cur.close()
-    conn.close()
+        conn = get_connection()
+        cur = conn.cursor()
 
-    return [
-        {
-            "id": row[0],
-            "name": row[1],
-            "issue": row[2],
-            "status": row[3]
+        cur.execute("SELECT 1")
+        cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        return {
+            "status": "healthy",
+            "database": "connected"
         }
-        for row in tickets
-    ]
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database connection failed: {str(e)}"
+        )
 
 
-# Update an existing support ticket
+# =========================================================
+# TICKETS
+# =========================================================
+
+@app.post("/tickets")
+def create_ticket_endpoint(ticket: Ticket):
+
+    return create_ticket(ticket)
+
+
+@app.get("/tickets")
+def get_tickets_endpoint():
+
+    return get_all_tickets()
+
+
 @app.put("/tickets/{ticket_id}")
-def update_ticket(ticket_id: int, ticket: Ticket):
-    conn = get_connection()
-    cur = conn.cursor()
+def update_ticket_endpoint(
+    ticket_id: int,
+    ticket: Ticket
+):
 
-    cur.execute(
-        "UPDATE tickets SET name=%s, issue=%s WHERE id=%s",
-        (ticket.name, ticket.issue, ticket_id)
+    return update_ticket(
+        ticket_id,
+        ticket
     )
 
-    # Return an error if the ticket does not exist
-    if cur.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Ticket not found")
 
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return {"message": "Ticket updated successfully"}
-
-
-# Delete an existing support ticket
 @app.delete("/tickets/{ticket_id}")
-def delete_ticket(ticket_id: int):
-    conn = get_connection()
-    cur = conn.cursor()
+def delete_ticket_endpoint(ticket_id: int):
 
-    cur.execute(
-        "DELETE FROM tickets WHERE id=%s",
-        (ticket_id,)
-    )
-
-    # Return an error if the ticket does not exist
-    if cur.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return {"message": "Ticket deleted successfully"}
+    return delete_ticket(ticket_id)

@@ -6,7 +6,7 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 # Copy the assets folder into the container 
-COPY app.py .
+COPY . .
 COPY assets ./assets
 EXPOSE 8501
 
