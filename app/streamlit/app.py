@@ -13,7 +13,7 @@ BACKEND_URL = "http://backend:8000"
 st.set_page_config(
     page_title="IT Support",
     page_icon="💻",
-    layout="centered"
+    layout="centeredd"
 )
 
 
