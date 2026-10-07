@@ -2,21 +2,46 @@ stages:
   - test
   - build
   - deploy
+  - verify
 
-test:
+test-backend:
   stage: test
   script:
+    - echo "Checking backend Python files..."
     - python3 -m compileall app/backend
+    - echo "Backend check passed."
+
+test-streamlit:
+  stage: test
+  script:
+    - echo "Checking Streamlit Python files..."
     - python3 -m compileall app/streamlit
+    - echo "Streamlit check passed."
 
 build:
   stage: build
   script:
+    - echo "Validating Docker Compose configuration..."
+    - docker compose config --quiet
+    - echo "Building application containers..."
     - docker compose build
+    - echo "Build completed."
 
 deploy:
   stage: deploy
+  resource_group: app-production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   script:
-    - docker compose up -d
-    - sleep 10
-    - curl --fail http://localhost:8000/health
+    - echo "Deploying CloudAura application..."
+    - docker compose up -d --remove-orphans
+    - echo "Deployment completed."
+    - docker compose ps
+
+app-health-check:
+  stage: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - echo "Running application health check..."
+    - ./scripts/app-health-check.sh
