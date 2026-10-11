@@ -1,7 +1,5 @@
 # CloudAura – Internal Git & CI/CD Platform
 
-**Project #3 | DevOps Academy**
-
 ## Overview
 
 CloudAura is a self-hosted GitLab platform deployed on Microsoft Azure to provide a centralized environment for source code management, team collaboration, and automated software delivery.
