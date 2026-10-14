@@ -1,152 +1,309 @@
-# CloudAura – Internal Git & CI/CD Platform
+# Cloura
+### Cloud Infrastructure & CI/CD Automation
 
-## Overview
+Cloura is a DevOps project that demonstrates how to provision cloud infrastructure, deploy a containerized full-stack application, and automate the software delivery process using Azure, Terraform, Docker, and GitLab CI/CD.
 
-CloudAura is a self-hosted GitLab platform deployed on Microsoft Azure to provide a centralized environment for source code management, team collaboration, and automated software delivery.
+The project was developed as part of a DevOps bootcamp to gain hands-on experience with infrastructure automation, containerization, CI/CD pipelines, and security scanning.
 
-The project uses **Terraform** for infrastructure provisioning, **Docker Compose** for containerized deployment, **GitLab CI/CD** for automation, and **Bash scripts** for operational management.
+---
 
-A full-stack IT Support Ticket System was developed as a sample application to demonstrate the CI/CD workflow.
+## 1. Project Overview
 
-## Tech Stack
+Cloura combines cloud infrastructure and application deployment into one automated environment.
 
-| Technology | Purpose |
-|---|---|
-| Microsoft Azure | Cloud infrastructure |
-| Terraform | Infrastructure as Code |
-| Docker & Docker Compose | Containerization and deployment |
-| GitLab CE | Source control and CI/CD platform |
-| GitLab Runner | Pipeline execution |
-| Bash | Operational automation |
-| Streamlit | Application frontend |
-| FastAPI | Application backend |
-| PostgreSQL | Database |
+The project consists of three main components:
 
-## Architecture
+- **Cloud Infrastructure:** Azure resources provisioned using Terraform.
+- **DevOps Environment:** Self-hosted GitLab and GitLab Runner for CI/CD automation.
+- **Full-Stack Application:** An IT Support Ticket System developed using Streamlit, FastAPI, and PostgreSQL.
 
-The platform runs on an Azure Ubuntu VM within a Virtual Network, protected by a Network Security Group.
+The goal is to demonstrate an automated workflow from source code changes to application deployment and verification.
 
-GitLab is deployed using Docker Compose, while GitLab Runner uses the Shell executor to build and deploy the sample application.
+## 2. Solution Architecture
+
+The solution is hosted on an Azure Ubuntu virtual machine.
+
+Terraform provisions the required cloud resources, including the Virtual Network, Subnet, Network Security Group, and Virtual Machine.
+
+Docker runs GitLab and the application services, while GitLab Runner executes the CI/CD pipeline using the Shell Executor.
 
 ```text
-Developer
-    |
-    v
-GitLab Repository
-    |
-    v
-GitLab CI/CD Pipeline
-    |
-    v
-GitLab Runner
-    |
-    +-- Test
-    +-- Build
-    +-- Deploy
-    +-- Verify
-    |
-    v
-CloudAura IT Support Application
-    |
-    +-- Streamlit (Frontend)
-    +-- FastAPI (Backend)
-    +-- PostgreSQL (Database)
+                  Developers
+                      |
+                      v
+               GitLab Repository
+                      |
+                      v
+                 GitLab CI/CD
+                      |
+                      v
+              GitLab Runner
+              (Shell Executor)
+                      |
+                      v
+        Test → Build → Security
+                      |
+                      v
+               Deploy → Verify
+                      |
+                      v
+                Docker Compose
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       Streamlit    FastAPI    PostgreSQL
+       Frontend     Backend     Database
 ```
 
-## Project Structure
+## 3. Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Cloud Platform | Microsoft Azure |
+| Infrastructure as Code | Terraform |
+| Operating System | Ubuntu Linux |
+| Containerization | Docker, Docker Compose |
+| Version Control | GitHub, GitLab |
+| CI/CD | GitLab CI/CD, GitLab Runner |
+| Security Scanning | Trivy |
+| Automation | Bash |
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Database | PostgreSQL |
+
+## 4. Repository Structure
 
 ```text
 Cloura-fullstack-infr-project/
-├── terraform/          # Azure infrastructure
-├── gitlab/             # GitLab Docker Compose configuration
+│
 ├── app/
-│   ├── backend/        # FastAPI
-│   └── streamlit/      # Frontend
-├── scripts/            # Bash automation
-├── docker-compose.yml  # Application services
-├── .gitlab-ci.yml      # CI/CD pipeline
-├── .env.example        # Environment template
+│   ├── backend/
+│   └── streamlit/
+│
+├── gitlab/
+│
+├── terraform/
+│
+├── scripts/
+│   ├── setup-docker.sh
+│   ├── deploy-gitlab.sh
+│   ├── app-health-check.sh
+│   ├── health-check.sh
+│   ├── backup.sh
+│   └── redeploy.sh
+│
+├── docker-compose.yml
+├── .gitlab-ci.yml
 └── README.md
 ```
 
-## Infrastructure & Deployment
+## 5. Infrastructure Provisioning
 
-Terraform provisions the Azure Resource Group, Virtual Network, Subnet, Network Security Group, Virtual Machine, and Public IP.
+Terraform automates the creation of the Azure infrastructure.
 
-To provision the infrastructure:
+**Provisioned resources:**
+
+- Resource Group
+- Virtual Network (VNet)
+- Subnet
+- Network Security Group (NSG)
+- Public IP Address
+- Ubuntu Virtual Machine
+
+### Terraform Commands
+
+Navigate to the Terraform directory:
 
 ```bash
 cd terraform
+```
+
+Initialize Terraform:
+
+```bash
 terraform init
+```
+
+Preview infrastructure changes:
+
+```bash
 terraform plan
+```
+
+Provision the infrastructure:
+
+```bash
 terraform apply
 ```
 
-After provisioning, Docker and Docker Compose are installed on the VM, and GitLab is deployed using its Compose configuration.
+Azure authentication, required variables, and permissions must be configured before deployment.
 
-GitLab Runner is configured to execute CI/CD jobs and deploy the sample application.
+## 6. Docker & GitLab Setup
 
-## CI/CD Workflow
+Docker is used to run the application's containerized services and the self-hosted GitLab instance.
 
-The pipeline contains four stages:
+### Docker Installation
+
+The project includes a Bash script that automates Docker Engine and Docker Compose installation on Ubuntu.
+
+```bash
+sudo bash scripts/setup-docker.sh
+```
+
+Verify the installation:
+
+```bash
+docker --version
+docker compose version
+```
+
+### GitLab & Runner
+
+GitLab is hosted on the Azure virtual machine using Docker.
+
+GitLab Runner is installed directly on the VM and configured with the **Shell Executor** to execute CI/CD jobs.
+
+## 7. CI/CD Pipeline
+
+The GitLab CI/CD pipeline automates the application delivery process through five stages.
 
 | Stage | Description |
 |---|---|
-| **Test** | Validate backend and frontend Python files |
-| **Build** | Validate Docker Compose and build application images |
-| **Deploy** | Deploy containers using Docker Compose |
-| **Verify** | Check PostgreSQL, FastAPI, and Streamlit availability |
+| **Test** | Checks backend and frontend Python files for compilation errors |
+| **Build** | Validates Docker Compose configuration and builds Docker images |
+| **Security** | Scans Docker images using Trivy |
+| **Deploy** | Deploys application containers using Docker Compose |
+| **Verify** | Runs application health checks after deployment |
 
-**Result:** The GitLab pipeline was successfully executed with **5/5 jobs passed**.
+### Security Scanning with Trivy
 
-## Bash Automation
+Trivy scans Docker images for **HIGH** and **CRITICAL** vulnerabilities.
 
-The project includes operational scripts:
+The scan is configured with:
 
-| Script | Purpose |
-|---|---|
-| `deploy-gitlab.sh` | Start and validate GitLab deployment |
-| `redeploy.sh` | Recreate the GitLab container |
-| `health-check.sh` | Validate Docker and GitLab health |
-| `app-health-check.sh` | Verify application services |
-| `backup.sh` | Back up GitLab data and configuration |
+```bash
+--scanners vuln
+--severity HIGH,CRITICAL
+--exit-code 0
+```
 
-GitLab health checks, application verification, and backup creation were successfully tested.
+The configuration reports detected vulnerabilities without automatically failing the pipeline because of those findings.
 
-## Security & Operations
+### Deployment
 
-The platform includes:
+The Deploy stage runs on the `main` branch and starts the application containers:
 
-- Azure NSG rules for network access control.
-- SSH key-based authentication.
-- GitLab CI/CD variables for database credentials.
-- Git-ignored `.env` files to protect local secrets.
-- Persistent Docker storage for GitLab and PostgreSQL.
-- Bash scripts for health checks and backups.
+```bash
+docker compose up -d --remove-orphans
+```
 
-**Note:** This is a single-node demonstration environment. Production deployment would require additional hardening, HTTPS, and off-VM backups.
+### Verification
 
-## Troubleshooting
+After deployment, the Verify stage runs:
 
-| Issue | Recommended Check |
-|---|---|
-| GitLab unavailable | VM status and GitLab container health |
-| Pipeline pending | GitLab Runner service |
-| Build failure | Docker Compose configuration and job logs |
-| Application unavailable | Container logs and application health check |
-| Database connection error | PostgreSQL status and environment variables |
+```bash
+./scripts/app-health-check.sh
+```
 
-## Project Results
+This checks the application's health after deployment.
 
-The project successfully demonstrates:
+## 8. IT Support Ticket Application
+
+Cloura includes a full-stack IT Support Ticket System that allows users to submit technical support requests.
+
+### Frontend — Streamlit
+
+Provides an interactive interface for entering user information, selecting an issue category, and submitting ticket details.
+
+### Backend — FastAPI
+
+Processes support ticket requests and handles communication with the database.
+
+### Database — PostgreSQL
+
+Stores submitted support tickets.
+
+### Application Workflow
+
+```text
+User
+  |
+  v
+Streamlit Frontend
+  |
+  v
+FastAPI Backend
+  |
+  v
+PostgreSQL Database
+  |
+  v
+Ticket Submission Confirmation
+```
+
+## 9. Running the Application
+
+Ensure Docker Engine and Docker Compose are installed and the required environment configuration is available.
+
+From the project root:
+
+**Build and start the containers:**
+
+```bash
+docker compose up -d --build
+```
+
+**Check container status:**
+
+```bash
+docker compose ps
+```
+
+**View logs:**
+
+```bash
+docker compose logs -f
+```
+
+**Stop the containers:**
+
+```bash
+docker compose down
+```
+
+## 10. Security Considerations
+
+The project incorporates several security practices:
+
+- Network access controls through Azure NSG.
+- Docker image vulnerability scanning with Trivy.
+- Automated application checks through GitLab CI/CD.
+- Containerized application components.
+
+This project is an educational prototype rather than a production-ready deployment. Security scanning is informational, and additional hardening would be required for a production environment.
+
+## 11. Project Outcomes
+
+The project provided hands-on experience with:
 
 - Azure infrastructure provisioning using Terraform.
-- Self-hosted GitLab deployment using Docker Compose.
-- GitLab Runner configuration.
-- Automated CI/CD pipeline execution.
-- Deployment of a full-stack IT Support application.
-- Operational health checks and GitLab backups.
+- Linux VM configuration and administration.
+- Docker and Docker Compose.
+- Self-hosted GitLab and GitLab Runner.
+- CI/CD pipeline implementation.
+- Automated application deployment.
+- Trivy security scanning.
+- Bash scripting and operational automation.
+- Full-stack application deployment and verification.
 
-## Conclusion
+## 12. Team Members
 
-CloudAura demonstrates a practical internal DevOps platform that integrates **Infrastructure as Code, Git-based collaboration, containerization, CI/CD automation, and operational scripting** in a single Azure environment.
+- Sara
+- Wessal
+- Fai
+- Ghadeer
+
+---
+
+**Project Status:** Functional DevOps prototype developed for educational and demonstration purposes.
