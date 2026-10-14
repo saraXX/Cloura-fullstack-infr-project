@@ -19,6 +19,13 @@ The project consists of three main components:
 
 The goal is to demonstrate an automated workflow from source code changes to application deployment and verification.
 
+![](assets/image2.png)
+
+![](assets/image1.png)
+
+![](assets/image3.png)
+
+
 ## 2. Solution Architecture
 
 The solution is hosted on an Azure Ubuntu virtual machine.
